@@ -12,7 +12,6 @@ app.use(express.json());
 
 // MongoDB URI
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.syckqzu.mongodb.net/?appName=Cluster0`;
-
 const client = new MongoClient(uri, {
   serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true },
 });
@@ -24,8 +23,9 @@ async function run() {
 
     const LoanCollection = db.collection("LoanRequests");
     const LoanApplicationsCollection = db.collection("LoanApplications");
+    const UsersCollection = db.collection("Users");
 
-    // 🚀 Loan Routes
+    // ---------------- LOANS ----------------
     app.get("/LoanRequests", async (req, res) => {
       const loans = await LoanCollection.find().limit(6).toArray();
       res.send(loans);
@@ -36,7 +36,6 @@ async function run() {
       res.send(loans);
     });
 
-    // 🚀 Loan Details Route
     app.get("/loan-details/:id", async (req, res) => {
       try {
         const id = req.params.id;
@@ -54,7 +53,7 @@ async function run() {
       res.send(result);
     });
 
-    // 🚀 Loan Application Routes
+    // ---------------- LOAN APPLICATIONS ----------------
     app.post("/loan-application", async (req, res) => {
       try {
         const applicationData = req.body;
@@ -76,9 +75,47 @@ async function run() {
       res.send(result);
     });
 
+    // ---------------- USERS ----------------
+    // Get all users
+    app.get("/users", async (req, res) => {
+      const users = await UsersCollection.find().toArray();
+      res.send(users);
+    });
+
+    // Add new user (for registration)
+    app.post("/users", async (req, res) => {
+      const user = req.body;
+      const existing = await UsersCollection.findOne({ email: user.email });
+      if (existing) {
+        return res.status(400).send({ success: false, message: "User already exists" });
+      }
+      const result = await UsersCollection.insertOne({ ...user, status: "active" });
+      res.send(result);
+    });
+
+    // Update user role
+    app.put("/users/:id/role", async (req, res) => {
+      const { role } = req.body;
+      const result = await UsersCollection.updateOne(
+        { _id: new ObjectId(req.params.id) },
+        { $set: { role } }
+      );
+      res.send(result);
+    });
+
+    // Update user status (active / suspended)
+    app.put("/users/:id/status", async (req, res) => {
+      const { status } = req.body;
+      const result = await UsersCollection.updateOne(
+        { _id: new ObjectId(req.params.id) },
+        { $set: { status } }
+      );
+      res.send(result);
+    });
+
     console.log("Connected to MongoDB!");
   } finally {
-    // keep connection alive
+    // keep the connection alive
   }
 }
 
@@ -91,4 +128,3 @@ app.get("/", (req, res) => {
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
-  
