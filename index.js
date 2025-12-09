@@ -21,31 +21,64 @@ async function run() {
   try {
     await client.connect();
     const db = client.db("microLoanRequestDB");
-    const LoanCollection = db.collection("LoanRequests");
 
-    // GET all loan requests (limit to 6 for landing page)
+    const LoanCollection = db.collection("LoanRequests");
+    const LoanApplicationsCollection = db.collection("LoanApplications");
+
+    // 🚀 Loan Routes
     app.get("/LoanRequests", async (req, res) => {
       const loans = await LoanCollection.find().limit(6).toArray();
       res.send(loans);
     });
 
-    // GET single loan by ID
-    app.get("/LoanRequests/:id", async (req, res) => {
-      const id = req.params.id;
-      const loan = await LoanCollection.findOne({ _id: new ObjectId(id) });
-      res.send(loan);
+    app.get("/AllLoans", async (req, res) => {
+      const loans = await LoanCollection.find().toArray();
+      res.send(loans);
     });
 
-    // POST new loan
+    // 🚀 Loan Details Route
+    app.get("/loan-details/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const loan = await LoanCollection.findOne({ _id: new ObjectId(id) });
+        if (!loan) return res.status(404).send({ success: false, message: "Loan not found" });
+        res.send({ success: true, loan });
+      } catch (error) {
+        res.status(500).send({ success: false, message: error.message });
+      }
+    });
+
     app.post("/LoanRequests", async (req, res) => {
-      const newLoanRequest = req.body;
-      const result = await LoanCollection.insertOne(newLoanRequest);
+      const newLoan = req.body;
+      const result = await LoanCollection.insertOne(newLoan);
+      res.send(result);
+    });
+
+    // 🚀 Loan Application Routes
+    app.post("/loan-application", async (req, res) => {
+      try {
+        const applicationData = req.body;
+        const result = await LoanApplicationsCollection.insertOne(applicationData);
+        res.send({ success: true, message: "Loan Application Submitted", result });
+      } catch (error) {
+        res.send({ success: false, message: error.message });
+      }
+    });
+
+    app.get("/loan-applications", async (req, res) => {
+      const result = await LoanApplicationsCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.get("/loan-applications/:email", async (req, res) => {
+      const email = req.params.email;
+      const result = await LoanApplicationsCollection.find({ email }).toArray();
       res.send(result);
     });
 
     console.log("Connected to MongoDB!");
   } finally {
-    // await client.close(); // keep connection alive
+    // keep connection alive
   }
 }
 
@@ -58,3 +91,4 @@ app.get("/", (req, res) => {
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
+  
