@@ -53,6 +53,32 @@ async function run() {
       res.send(result);
     });
 
+    // ---------------- ADMIN LOAN MANAGEMENT ----------------
+    // Delete a loan
+    app.delete("/loans/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const result = await LoanCollection.deleteOne({ _id: new ObjectId(id) });
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({ success: false, message: error.message });
+      }
+    });
+
+    // Toggle show on home
+    app.put("/loans/:id/home", async (req, res) => {
+      try {
+        const { showOnHome } = req.body;
+        const result = await LoanCollection.updateOne(
+          { _id: new ObjectId(req.params.id) },
+          { $set: { showOnHome } }
+        );
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({ success: false, message: error.message });
+      }
+    });
+
     // ---------------- LOAN APPLICATIONS ----------------
     app.post("/loan-application", async (req, res) => {
       try {
@@ -76,13 +102,11 @@ async function run() {
     });
 
     // ---------------- USERS ----------------
-    // Get all users
     app.get("/users", async (req, res) => {
       const users = await UsersCollection.find().toArray();
       res.send(users);
     });
 
-    // Add new user (for registration)
     app.post("/users", async (req, res) => {
       const user = req.body;
       const existing = await UsersCollection.findOne({ email: user.email });
@@ -93,7 +117,6 @@ async function run() {
       res.send(result);
     });
 
-    // Update user role
     app.put("/users/:id/role", async (req, res) => {
       const { role } = req.body;
       const result = await UsersCollection.updateOne(
@@ -103,7 +126,6 @@ async function run() {
       res.send(result);
     });
 
-    // Update user status (active / suspended)
     app.put("/users/:id/status", async (req, res) => {
       const { status } = req.body;
       const result = await UsersCollection.updateOne(
@@ -115,7 +137,7 @@ async function run() {
 
     console.log("Connected to MongoDB!");
   } finally {
-    // keep the connection alive
+    // keep connection alive
   }
 }
 
