@@ -25,7 +25,7 @@ async function run() {
     const LoanApplicationsCollection = db.collection("LoanApplications");
     const UsersCollection = db.collection("Users");
 
-    // ---------------- LOANS ----------------
+   
     app.get("/LoanRequests", async (req, res) => {
       const loans = await LoanCollection.find().limit(6).toArray();
       res.send(loans);
@@ -53,8 +53,8 @@ async function run() {
       res.send(result);
     });
 
-    // ---------------- ADMIN LOAN MANAGEMENT ----------------
-    // Delete a loan
+   
+   
     app.delete("/loans/:id", async (req, res) => {
       try {
         const id = req.params.id;
@@ -65,7 +65,7 @@ async function run() {
       }
     });
 
-    // Toggle show on home
+  
     app.put("/loans/:id/home", async (req, res) => {
       try {
         const { showOnHome } = req.body;
@@ -79,7 +79,7 @@ async function run() {
       }
     });
 
-    // ---------------- LOAN APPLICATIONS ----------------
+    
     app.post("/loan-application", async (req, res) => {
       try {
         const applicationData = req.body;
@@ -101,7 +101,7 @@ async function run() {
       res.send(result);
     });
 
-    // ---------------- USERS ----------------
+   
     app.get("/users", async (req, res) => {
       const users = await UsersCollection.find().toArray();
       res.send(users);
@@ -137,7 +137,7 @@ async function run() {
 
     console.log("Connected to MongoDB!");
   } finally {
-    // keep connection alive
+    
   }
 }
 
