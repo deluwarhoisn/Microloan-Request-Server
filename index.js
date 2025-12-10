@@ -25,7 +25,9 @@ async function run() {
     const LoanApplicationsCollection = db.collection("LoanApplications");
     const UsersCollection = db.collection("Users");
 
-   
+    console.log("Connected to MongoDB!");
+
+    // ---------------- LOANS ----------------
     app.get("/LoanRequests", async (req, res) => {
       const loans = await LoanCollection.find().limit(6).toArray();
       res.send(loans);
@@ -53,8 +55,6 @@ async function run() {
       res.send(result);
     });
 
-   
-   
     app.delete("/loans/:id", async (req, res) => {
       try {
         const id = req.params.id;
@@ -65,7 +65,6 @@ async function run() {
       }
     });
 
-  
     app.put("/loans/:id/home", async (req, res) => {
       try {
         const { showOnHome } = req.body;
@@ -79,7 +78,7 @@ async function run() {
       }
     });
 
-    
+    // ---------------- LOAN APPLICATIONS ----------------
     app.post("/loan-application", async (req, res) => {
       try {
         const applicationData = req.body;
@@ -95,13 +94,59 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/loan-applications/:email", async (req, res) => {
-      const email = req.params.email;
-      const result = await LoanApplicationsCollection.find({ email }).toArray();
-      res.send(result);
+    // User-specific loans
+    app.get("/my-loans/:email", async (req, res) => {
+      try {
+        const email = req.params.email;
+        const loans = await LoanApplicationsCollection.find({ email }).toArray();
+        res.send({ success: true, loans });
+      } catch (error) {
+        res.status(500).send({ success: false, message: error.message });
+      }
     });
 
-   
+    // Cancel loan application (only pending)
+    app.delete("/loan-applications/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const loan = await LoanApplicationsCollection.findOne({ _id: new ObjectId(id) });
+
+        if (!loan) return res.status(404).send({ success: false, message: "Loan not found" });
+        if (loan.status !== "Pending")
+          return res.status(400).send({ success: false, message: "Only pending loans can be canceled" });
+
+        const result = await LoanApplicationsCollection.deleteOne({ _id: new ObjectId(id) });
+        res.send({ success: true, message: "Loan application canceled", result });
+      } catch (error) {
+        res.status(500).send({ success: false, message: error.message });
+      }
+    });
+
+    // Update loan application status (Admin)
+    app.put("/loan-applications/:id/status", async (req, res) => {
+      try {
+        const { status } = req.body;
+        const result = await LoanApplicationsCollection.updateOne(
+          { _id: new ObjectId(req.params.id) },
+          { $set: { status } }
+        );
+        res.send({ success: true, result });
+      } catch (error) {
+        res.status(500).send({ success: false, message: error.message });
+      }
+    });
+
+    // Approved loans
+    app.get("/approved-loans", async (req, res) => {
+      try {
+        const loans = await LoanApplicationsCollection.find({ status: "Approved" }).toArray();
+        res.send({ success: true, loans });
+      } catch (error) {
+        res.status(500).send({ success: false, message: error.message });
+      }
+    });
+
+    // ---------------- USERS ----------------
     app.get("/users", async (req, res) => {
       const users = await UsersCollection.find().toArray();
       res.send(users);
@@ -135,19 +180,19 @@ async function run() {
       res.send(result);
     });
 
-    console.log("Connected to MongoDB!");
   } finally {
-    
+    // Keep connection alive
   }
 }
 
-
 run().catch(console.dir);
 
+// Root route
 app.get("/", (req, res) => {
   res.send("Microloan-Request-Server is running...");
 });
 
+// Start server
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
