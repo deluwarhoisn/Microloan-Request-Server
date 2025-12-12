@@ -78,7 +78,7 @@ async function run() {
       }
     });
 
-    // ---------------- LOAN APPLICATIONS ----------------
+   
     app.post("/loan-application", async (req, res) => {
       try {
         const applicationData = req.body;
@@ -94,7 +94,7 @@ async function run() {
       res.send(result);
     });
 
-    // User-specific loans
+   
     app.get("/my-loans/:email", async (req, res) => {
       try {
         const email = req.params.email;
@@ -105,7 +105,7 @@ async function run() {
       }
     });
 
-    // Cancel loan application (only pending)
+    
     app.delete("/loan-applications/:id", async (req, res) => {
       try {
         const id = req.params.id;
